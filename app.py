@@ -1,5 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
+import time
 
 st.title("Mening Shaxsiy AI Yordamchim")
 
@@ -13,11 +14,9 @@ for i in range(1, 7):
 if not api_keys:
     st.error("API kalit topilmadi! Streamlit Secrets bo'limini tekshiring.")
 else:
-    # Ishlatilayotgan kalit indeksini saqlash
     if "key_index" not in st.session_state:
         st.session_state.key_index = 0
 
-    # Chat tarixini saqlash
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -25,7 +24,6 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Foydalanuvchi savoli
     if prompt := st.chat_input("Savolingizni yozing..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -35,34 +33,45 @@ else:
             success = False
             response_text = ""
             
-            # Kalitlar bo'yicha birma-bir harakat qilish (Limit bo'lsa keyingisiga o'tadi)
+            # Agar limit bo'lsa, zaxira modellarga ham o'tib ko'radi
+            models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro']
+            
+            # Kalitlar va modellar bo'yicha aylanish
             for attempt in range(len(api_keys)):
                 current_key = api_keys[st.session_state.key_index]
-                try:
-                    genai.configure(api_key=current_key)
-                    model = genai.GenerativeModel(
-                        'gemini-3.8-flash',
-                        system_instruction="Sen Aqilli yordamchisan. Hech qachon o'zingni Gemini deb atama. Seni Firdavs Mamajonov yaratgan. Agar kimligingni yoki seni kim yaratganini so'rashsa, har doim o'zingni Aqilli yordamchi deb tanishtir va seni Firdavs Mamajonov yaratganini ayt."
-                    )
-                    response = model.generate_content(prompt)
-                    response_text = response.text
-                    success = True
-                    break
-                except Exception as e:
-                    error_str = str(e)
-                    # Limit tugaganda (429 yoki quota xatosi) keyingi kalitga o'tish
-                    if "429" in error_str or "quota" in error_str.lower():
-                        st.session_state.key_index = (st.session_state.key_index + 1) % len(api_keys)
-                        continue
-                    else:
-                        response_text = f"Xatolik yuz berdi: {e}"
+                
+                for model_name in models_to_try:
+                    try:
+                        genai.configure(api_key=current_key)
+                        model = genai.GenerativeModel(
+                            model_name,
+                            system_instruction="Sen Aqilli yordamchisan. Hech qachon o'zingni Gemini deb atama. Seni Firdavs Mamajonov yaratgan. Agar kimligingni yoki seni kim yaratganini so'rashsa, har doim o'zingni Aqilli yordamchi deb tanishtir va seni Firdavs Mamajonov yaratganini ayt."
+                        )
+                        response = model.generate_content(prompt)
+                        response_text = response.text
+                        success = True
                         break
+                    except Exception as e:
+                        error_str = str(e)
+                        if "429" in error_str or "quota" in error_str.lower():
+                            # Serverni ortiqcha yuklamaslik uchun 1 soniya kutamiz
+                            time.sleep(1)
+                            continue
+                        else:
+                            response_text = f"Xatolik yuz berdi: {e}"
+                            break
+
+                if success:
+                    break
+                else:
+                    # Keyingi kalitga o'tish
+                    st.session_state.key_index = (st.session_state.key_index + 1) % len(api_keys)
 
             if success:
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
             else:
                 if not response_text.startswith("Xatolik"):
-                    st.error("Barcha API kalitlarning kunlik limiti tugadi. Birozdan so'ng qayta urinib ko'ring.")
+                    st.error("Barcha API kalitlarning vaqtincha limiti tugagan. Birozdan so'ng qayta urinib ko'ring.")
                 else:
                     st.error(response_text)
