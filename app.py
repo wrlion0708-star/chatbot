@@ -32,7 +32,7 @@ if api_key:
         with st.chat_message("assistant"):
             with st.spinner("O'ylamoqda va qidirmoqda..."):
                 try:
-                    response = client.models.generate_content(
+                    response = client.models.generate_content()
                         model = genai.GenerativeModel('gemini-1.5-flash')
                         contents=prompt,
                         config={
