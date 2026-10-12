@@ -33,7 +33,7 @@ if api_key:
             with st.spinner("O'ylamoqda va qidirmoqda..."):
                 try:
                     response = client.models.generate_content()
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
                         contents=prompt,
                         config={
                             "tools": [{"google_search": {}}]
