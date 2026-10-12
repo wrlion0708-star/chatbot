@@ -1,4 +1,4 @@
-import Streamlite as st 
+import Streamlit as st 
 import datetime
 
 def calculate_math(text):
