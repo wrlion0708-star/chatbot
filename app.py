@@ -11,7 +11,7 @@ if not api_key:
     st.error("API kalit topilmadi. Streamlit Secrets bo'limiga GEMINI_API_KEY joylang.")
 else:
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel('gemini-3.8-flash')
 
     # Chat tarixini saqlash
     if "messages" not in st.session_state:
