@@ -6,8 +6,11 @@ st.set_page_config(page_title="AI Assistant", page_icon="🤖")
 st.title("🤖 Mening Shaxsiy AI Yordamchim")
 st.write("Istalgan savolingizni bering, internet va Gemini AI orqali aniq javob topib beradi!")
 
-# API kalitni foydalanuvchidan so'rash
-api_key = st.sidebar.text_input("Google Gemini API Key:", type="password")
+# Streamlit maxfiy xotirasidan API kalitni olish
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    api_key = None
 
 if api_key:
     client = genai.Client(api_key=api_key)
@@ -29,7 +32,6 @@ if api_key:
         with st.chat_message("assistant"):
             with st.spinner("O'ylamoqda va qidirmoqda..."):
                 try:
-                    # Google Search bilan javob generatsiya qilish
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=prompt,
@@ -44,4 +46,4 @@ if api_key:
                 st.markdown(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
 else:
-    st.info("👈 Chap tomondagi menyuga Gemini API kalitingizni kiriting!")
+    st.warning("⚠️ API kalit topilmadi! Iltimos, Streamlit sozlamalariga API kalitingizni kiriting (2-qadamga qarang).")
