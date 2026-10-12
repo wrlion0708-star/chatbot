@@ -1,4 +1,4 @@
-import gradio as gr
+import Streamlite gr
 import datetime
 
 def calculate_math(text):
