@@ -1,4 +1,3 @@
-python
 import Streamlit as st 
 import datetime
 
