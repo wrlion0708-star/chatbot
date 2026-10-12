@@ -2,7 +2,6 @@ import streamlit as st
 import google.generativeai as genai
 
 st.title("Mening Shaxsiy AI Yordamchim")
-st.write("Istalgan savolingizni bering, internet va Gemini AI orqali aniq javob topib beradi!")
 
 # API kalitni o'qib olish
 api_key = st.secrets.get("GEMINI_API_KEY")
