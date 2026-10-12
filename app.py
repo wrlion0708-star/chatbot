@@ -1,4 +1,4 @@
-import Streamlit as st 
+import streamlit as st
 import datetime
 
 def calculate_math(text):
@@ -41,15 +41,24 @@ def answer_question(text):
 
     return f"💡 \"{text}\" haqida bazamda ma'lumot topilmadi. Boshqa savol bering!"
 
-def chat_response(message, history):
-    response = calculate_math(message) or answer_question(message)
-    return response
+# Streamlit Interfeysi
+st.title("🤖 Mening AI Yordamchim")
+st.write("Salom! Menga savol bering yoki misol yechishni so'rang.")
 
-demo = gr.ChatInterface(
-    fn=chat_response,
-    title="🤖 Mening AI Yordamchim",
-    description="Salom! Menga savol bering yoki misol yechishni so'rang.",
-    examples=["salom", "2+2", "python nima", "soat nechchi", "o'zbekiston poytaxti"]
-)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-demo.launch()
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("Xabaringizni yozing..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    response = calculate_math(prompt) or answer_question(prompt)
+    
+    with st.chat_message("assistant"):
+        st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
