@@ -3,21 +3,17 @@ import google.generativeai as genai
 
 st.title("Mening Shaxsiy AI Yordamchim")
 
-# 1. Bir nechta API kalitlarni yig'ib olish (st.secrets dan)
+# 1. Barcha 6 ta API kalitni yig'ib olish
 api_keys = []
-for i in range(1, 6):  # 1 dan 5 gacha bo'lgan kalitlarni tekshiradi
+for i in range(1, 7):
     key = st.secrets.get(f"GEMINI_API_KEY_{i}")
     if key:
         api_keys.append(key)
 
-# Agar raqamlangan kalitlar bo'lmasa, oddiy GEMINI_API_KEY ni oladi
-if not api_keys and "GEMINI_API_KEY" in st.secrets:
-    api_keys.append(st.secrets["GEMINI_API_KEY"])
-
 if not api_keys:
-    st.error("API kalit topilmadi. Streamlit Secrets bo'limiga kamida bitta kalit kiriting.")
+    st.error("API kalit topilmadi! Streamlit Secrets bo'limini tekshiring.")
 else:
-    # Qaysi kalit ishlatilayotganini kuzatib borish uchun index
+    # Ishlatilayotgan kalit indeksini saqlash
     if "key_index" not in st.session_state:
         st.session_state.key_index = 0
 
@@ -39,7 +35,7 @@ else:
             success = False
             response_text = ""
             
-            # Kalitlar bo'yicha birma-bir urinib ko'rish (Limit tugasa keyingisiga o'tadi)
+            # Kalitlar bo'yicha birma-bir harakat qilish (Limit bo'lsa keyingisiga o'tadi)
             for attempt in range(len(api_keys)):
                 current_key = api_keys[st.session_state.key_index]
                 try:
@@ -51,10 +47,10 @@ else:
                     response = model.generate_content(prompt)
                     response_text = response.text
                     success = True
-                    break  # Hammasi joyida bo'lsa sikldan chiqamiz
+                    break
                 except Exception as e:
                     error_str = str(e)
-                    # Agar limit (429) tugagan bo'lsa, keyingi kalitga o'tamiz
+                    # Limit tugaganda (429 yoki quota xatosi) keyingi kalitga o'tish
                     if "429" in error_str or "quota" in error_str.lower():
                         st.session_state.key_index = (st.session_state.key_index + 1) % len(api_keys)
                         continue
@@ -67,6 +63,6 @@ else:
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
             else:
                 if not response_text.startswith("Xatolik"):
-                    st.error("Barcha API kalitlarning limiti tugagan! Iltimos, yangi kalit qo'shing.")
+                    st.error("Barcha API kalitlarning kunlik limiti tugadi. Birozdan so'ng qayta urinib ko'ring.")
                 else:
                     st.error(response_text)
