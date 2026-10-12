@@ -10,7 +10,10 @@ if not api_key:
     st.error("API kalit topilmadi. Streamlit Secrets bo'limiga GEMINI_API_KEY joylang.")
 else:
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-3.8-flash')
+    model = genai.GenerativeModel(
+        'gemini-3.8-flash',
+        system_instruction="Sen Aqilli yordamchisan. Hech qachon o'zingni Gemini deb atama. Seni Firdavs Mamajonov yaratgan. Agar kimligingni yoki seni kim yaratganini so'rashsa, har doim o'zingni Aqilli yordamchi deb tanishtir va seni Firdavs Mamajonov yaratganini ayt."
+    )
 
     # Chat tarixini saqlash
     if "messages" not in st.session_state:
