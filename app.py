@@ -1,49 +1,36 @@
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
-st.set_page_config(page_title="AI Assistant", page_icon="🤖")
-
-st.title("🤖 Mening Shaxsiy AI Yordamchim")
+st.title("Mening Shaxsiy AI Yordamchim")
 st.write("Istalgan savolingizni bering, internet va Gemini AI orqali aniq javob topib beradi!")
 
-# Streamlit maxfiy xotirasidan API kalitni olish
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    api_key = None
+# API kalitni o'qib olish
+api_key = st.secrets.get("GEMINI_API_KEY")
 
-if api_key:
-    client = genai.Client(api_key=api_key)
+if not api_key:
+    st.error("API kalit topilmadi. Streamlit Secrets bo'limiga GEMINI_API_KEY joylang.")
+else:
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
+    # Chat tarixini saqlash
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Oldingi xabarlarni chiqarish
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Foydalanuvchi xabar kiritganda
+    # Foydalanuvchi savoli
     if prompt := st.chat_input("Savolingizni yozing..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("O'ylamoqda va qidirmoqda..."):
-                try:
-                    response = client.models.generate_content()
-model = genai.GenerativeModel('gemini-1.5-flash')
-                        contents=prompt,
-                        config={
-                            "tools": [{"google_search": {}}]
-                        }
-                    )
-                    bot_response = response.text
-                except Exception as e:
-                    bot_response = f"Xatolik yuz berdi: {e}"
-
-                st.markdown(bot_response)
-                st.session_state.messages.append({"role": "assistant", "content": bot_response})
-else:
-    st.warning("⚠️ API kalit topilmadi! Iltimos, Streamlit sozlamalariga API kalitingizni kiriting (2-qadamga qarang).")
+            try:
+                response = model.generate_content(prompt)
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error(f"Xatolik yuz berdi: {e}")
