@@ -1,64 +1,47 @@
 import streamlit as st
-import datetime
+from google import genai
 
-def calculate_math(text):
-    expr = text.replace(' ', '')
-    if any(op in expr for op in ['+', '-', '*', '/']) and all(c in "0123456789+-*/()." for c in expr):
-        try:
-            return f"🧮 Hisoblash natijasi: {text} = {eval(expr)}"
-        except:
-            pass
-    return None
+st.set_page_config(page_title="AI Assistant", page_icon="🤖")
 
-def answer_question(text):
-    t = text.lower().strip()
+st.title("🤖 Mening Shaxsiy AI Yordamchim")
+st.write("Istalgan savolingizni bering, internet va Gemini AI orqali aniq javob topib beradi!")
 
-    if "salom" in t or "assalomu alaykum" in t:
-        return "Salom! Nima yordam kerak?"
+# API kalitni foydalanuvchidan so'rash
+api_key = st.sidebar.text_input("Google Gemini API Key:", type="password")
 
-    qa_base = {
-        "matematika nima": "Matematika — miqdorlar, tuzilmalar, fazo va o'zgarishlarni o'rganadigan aniq fan.",
-        "pifagor teoremasi": "Pifagor teoremasi: To'g'ri burchakli uchburchakda gipotenuzaning kvadrati katetlarning kvadratlari yig'indisiga teng (a² + b² = c²).",
-        "tenglama nima": "Tenglama — noaniq miqdorni topish talab qilinadigan tenglikdir.",
-        "tub sonlar": "Tub sonlar — faqat 1 ga va o'ziga bo'linadigan 1 dan katta butun sonlar (2, 3, 5, 7, 11...).",
-        "pi soni": "Pi soni (π) — aylananing uzunligini uning diametriga nisbatidir. Taxminan 3.14159.",
-        "foiz nima": "Foiz — sonning yuzdan bir qismi (1% = 1/100).",
-        "python nima": "Python — sodda va kuchli dasturlash tili.",
-        "sun'iy intellekt": "Sun'iy intellekt (AI) — kompyuterlarning inson kabi fikrlashi.",
-        "o'zbekiston poytaxti": "O'zbekistonning poytaxti — Toshkent.",
-        "isming nima": "🤖 Men sizning shaxsiy AI yordamchingizman!",
-    }
+if api_key:
+    client = genai.Client(api_key=api_key)
 
-    for key, answer in qa_base.items():
-        if key in t:
-            return answer
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    if "soat" in t or "vaqt" in t:
-        return f"⏰ Hozirgi vaqt: {datetime.datetime.now().strftime('%H:%M:%S')}"
+    # Oldingi xabarlarni chiqarish
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    if "sana" in t or "bugun" in t:
-        return f"📅 Bugungi sana: {datetime.datetime.now().strftime('%Y-%m-%d')}"
+    # Foydalanuvchi xabar kiritganda
+    if prompt := st.chat_input("Savolingizni yozing..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    return f"💡 \"{text}\" haqida bazamda ma'lumot topilmadi. Boshqa savol bering!"
+        with st.chat_message("assistant"):
+            with st.spinner("O'ylamoqda va qidirmoqda..."):
+                try:
+                    # Google Search bilan javob generatsiya qilish
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                        config={
+                            "tools": [{"google_search": {}}]
+                        }
+                    )
+                    bot_response = response.text
+                except Exception as e:
+                    bot_response = f"Xatolik yuz berdi: {e}"
 
-# Streamlit Interfeysi
-st.title("🤖 Mening AI Yordamchim")
-st.write("Salom! Menga savol bering yoki misol yechishni so'rang.")
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-if prompt := st.chat_input("Xabaringizni yozing..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    response = calculate_math(prompt) or answer_question(prompt)
-    
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+                st.markdown(bot_response)
+                st.session_state.messages.append({"role": "assistant", "content": bot_response})
+else:
+    st.info("👈 Chap tomondagi menyuga Gemini API kalitingizni kiriting!")
